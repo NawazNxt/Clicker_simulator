@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker Simulator with Leaderboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .score {
+            font-size: 2rem;
+            color: #555;
+            margin: 10px 0;
+        }
+
+        .button {
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .upgrade {
+            margin: 10px auto;
+            width: 80%;
+            max-width: 400px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upgrade:hover {
+            background-color: #f0f8ff;
+        }
+
+        #leaderboard {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 400px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #leaderboard h2 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        #leaderboard ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #leaderboard ul li {
+            margin: 5px 0;
+            font-size: 1rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clicker Simulator </h1>
+    <p class="score">Score: <span id="score">0</span></p>
+    <button class="button" onclick="incrementScore()">Click Me!</button>
+
+    <div id="upgrades"></div>
+
+    <div id="leaderboard">
+        <h2>Leaderboard</h2>
+        <ul id="leaderboardList">
+            <!-- Leaderboard entries will go here -->
+        </ul>
+    </div>
+
+    <script>
+        let playerName = prompt("Enter your name:");
+        if (!playerName) playerName = "Player";
+
+        let score = 0;
+        let clickPower = 1;
+
+        const upgrades = [
+            { name: "Double Click Power", cost: 50, power: 2 },
+            { name: "Triple Click Power", cost: 150, power: 3 },
+            { name: "Super Click Power", cost: 500, power: 5 },
+
+        ];
+
+        const scoreDisplay = document.getElementById("score");
+        const upgradesContainer = document.getElementById("upgrades");
+        const leaderboardList = document.getElementById("leaderboardList");
+
+        // Load leaderboard from local storage
+        let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+
+        function incrementScore() {
+            score += clickPower;
+            scoreDisplay.textContent = score;
+            updateLeaderboard();
+        }
+
+        function buyUpgrade(upgrade) {
+            if (score >= upgrade.cost) {
+                score -= upgrade.cost;
+                scoreDisplay.textContent = score;
+                clickPower += upgrade.power;
+
+                // Remove the upgrade from the list
+                upgrades.splice(upgrades.indexOf(upgrade), 1);
+                renderUpgrades();
+            } else {
+                alert("Not enough points!");
+            }
+        }
+
+        function renderUpgrades() {
+            upgradesContainer.innerHTML = "";
+            upgrades.forEach((upgrade) => {
+                const upgradeElement = document.createElement("div");
+                upgradeElement.className = "upgrade";
+                upgradeElement.innerHTML = `
+                    <span>${upgrade.name}</span>
+                    <span>Cost: ${upgrade.cost}</span>
+                `;
+                upgradeElement.onclick = () => buyUpgrade(upgrade);
+                upgradesContainer.appendChild(upgradeElement);
+            });
+        }
+
+        function updateLeaderboard() {
+            // Add or update player's score in the leaderboard
+            const existingPlayer = leaderboard.find(entry => entry.name === playerName);
+            if (existingPlayer) {
+                existingPlayer.score = Math.max(existingPlayer.score, score); // Keep the higher score
+            } else {
+                leaderboard.push({ name: playerName, score: score });
+            }
+
+            // Sort leaderboard by score in descending order
+            leaderboard.sort((a, b) => b.score - a.score);
+
+            // Keep only the top 5 scores
+            leaderboard = leaderboard.slice(0, 5);
+
+            // Save to local storage
+            localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+
+            // Render the leaderboard
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            leaderboardList.innerHTML = "";
+            leaderboard.forEach((entry, index) => {
+                const listItem = document.createElement("li");
+                listItem.textContent = `${index + 1}. ${entry.name} - ${entry.score}`;
+                leaderboardList.appendChild(listItem);
+            });
+        }
+
+        // Initial rendering
+        renderUpgrades();
+        renderLeaderboard();
+    </script>
+</body>
+</html>
